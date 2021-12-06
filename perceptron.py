@@ -19,34 +19,34 @@ class PerceptronClassifier:
         for label in legalLabels:
             # this is the data-structure you should use
             self.weights[label] = util.Counter()
+            # each number has a counter for the weights
 
     def train(self, trainingData, trainingLabels, validationData, validationLabels):
         """
         The training loop for the perceptron passes through the training data several
         times and updates the weight vector for each label based on classification errors.
-        See the project description for details. 
+        See the project description for details.
 
-        Use the provided self.weights[label] data structure so that 
+        Use the provided self.weights[label] data structure so that
         the classify method works correctly. Also, recall that a
         datum is a counter from features to values for those features
         (and thus represents a vector a values).
         """
-
+        # self.features just stores the keys of the image,
         self.features = trainingData[0].keys()  # could be useful later
+        # basicFeatureExtractor method in dataClassifier.py breaks the image down
+        # into 1s and 0s, self.features is the pixels that have values,
+        # self.weights stores the pixels along with their weights
 
-        for iteration in range(1):
+        for iteration in range(self.max_iterations):
             print "Starting iteration ", iteration, "..."
-            for i in range(1):
+            for i in range(len(trainingData)):
                 "*** YOUR CODE HERE ***"
-                maxKey = self.classify([trainingData[i]])[0]
-
-                if maxKey != trainingLabels[i]:
-                    self.weights[maxKey] -= trainingData[i]
+                # training data stores the keys and values of the image
+                guess = self.classify([trainingData[i]])[0]
+                if guess != trainingLabels[i]:  # training
+                    self.weights[guess] -= trainingData[i]
                     self.weights[trainingLabels[i]] += trainingData[i]
-                    print("HELLO", self.weights[maxKey])
-                for i in self.weights[maxKey]:
-                    print(i)
-                util.raiseNotDefined()
 
     def classify(self, data):
         """
@@ -56,9 +56,10 @@ class PerceptronClassifier:
         Recall that a datum is a util.counter... 
         """
         guesses = []
+        # data is a list object
+        # datum is a util.Counter object
         for datum in data:
             vectors = util.Counter()
-
             for l in self.legalLabels:
                 vectors[l] = self.weights[l] * datum
             guesses.append(vectors.argMax())
