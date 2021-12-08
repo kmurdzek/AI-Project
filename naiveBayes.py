@@ -20,6 +20,7 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         # Look at this flag to decide whether to choose k automatically ** use this in your train method **
         self.automaticTuning = False
         self.probabilities = dict()
+        self.label_proportions = {}
 
     def setSmoothing(self, k):
         """
@@ -59,22 +60,30 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         """
         # go thru the training labels
         # convert trainingLabels to dict so we can make a counter object from it
-        num_of_labels = 10
-        num_of_rows = 28
-        num_of_columns = 28
+        num_of_labels = 0
+        num_of_rows = 0
+        num_of_columns = 0
+        if(len(self.legalLabels) == 10):
+            num_of_labels = 10
+            num_of_rows = 28
+            num_of_columns = 28
+        else:
+            num_of_labels = 2
+            num_of_rows = 60
+            num_of_columns = 70
         # need to set the probability arr to 0.001 because when calculating join probability
         # we dont want a 0 value canceling out our whole prediction.
         self.probability_arr = np.full((num_of_labels, num_of_rows,
                                         num_of_columns),  0.001, dtype=np.float)
-        label_proportions = {}
+
         for label in self.legalLabels:
-            label_proportions[label] = util.Counter()
+            self.label_proportions[label] = util.Counter()
             # assigns a counter to all legal labels
 
         # for every thing in the training data increment respective label when seen in training data
         for t in trainingLabels:
-            label_proportions[t].incrementAll([t], 1)
-        print(label_proportions)
+            self.label_proportions[t].incrementAll([t], 1)
+        print(self.label_proportions)
         # gets us the amount of that label there is
 
         # print(label_proportions.__getitem__(2).totalCount())
@@ -85,7 +94,7 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         '''
         for i in self.legalLabels:
             label = trainingLabels[i]
-            temp1 = label_proportions.__getitem__(label).totalCount()
+            temp1 = self.label_proportions.__getitem__(label).totalCount()
             for key in trainingData[i].keys():
                 temp2 = trainingData[label].__getitem__(key)
                 if(temp2 == 1):
@@ -96,7 +105,7 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         '''
         for i in range(len(trainingData)):
             label = trainingLabels[i]
-            temp1 = label_proportions.__getitem__(label).totalCount()
+            temp1 = self.label_proportions.__getitem__(label).totalCount()
             for key in trainingData[i].keys():
                 temp2 = trainingData[i].__getitem__(key)
                 if(temp2 == 1):
@@ -108,7 +117,7 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
             # now we still need the P(y | x) so we need to go through training data and find the probability
             # for each feature given its label
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # util.raiseNotDefined()
 
     def classify(self, testData):
         """
@@ -132,10 +141,27 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         logJoint[3] = <Estimate of log( P(Label = 3, datum) )>
         """
         logJoint = util.Counter()
+        # loops through all the pixels in the test data image
+        # it is called for everything in the training data
+        for label in self.legalLabels:  # goes through every possible label
+            # gets the probability of it being that label
+            probabilityOfLabel = self.label_proportions.__getitem__(
+                label).totalCount()/100.0
+            # print(probabilityOfLabel)
+            probs = 0
+            # goes through every pixel of the test data computes probability
+            # given we are using the matrix for the label
+            # index is the index of the pixel
+            # value is the value at that index in the data
+            for index, value in datum.items():
+                # get the probability of that index from the probability matrix
+                # value of pixel at index
+                # probability that value of index is 1 for the
+                indexProb = self.probability_arr[label, index[0], index[1]]
+                probs += probabilityOfLabel * datum[index]*indexProb
+            logJoint[label] = probs
 
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        # util.raiseNotDefined()
         return logJoint
 
     def findHighOddsFeatures(self, label1, label2):
