@@ -6,7 +6,6 @@ PRINT = True
 class PerceptronClassifier:
     """
     Perceptron classifier.
-
     Note that the variable 'datum' in this code refers to a counter of features
     (not to a raw samples.Datum).
     """
@@ -26,7 +25,6 @@ class PerceptronClassifier:
         The training loop for the perceptron passes through the training data several
         times and updates the weight vector for each label based on classification errors.
         See the project description for details.
-
         Use the provided self.weights[label] data structure so that
         the classify method works correctly. Also, recall that a
         datum is a counter from features to values for those features
@@ -52,7 +50,6 @@ class PerceptronClassifier:
         """
         Classifies each datum as the label that most closely matches the prototype vector
         for that label.  See the project description for details.
-
         Recall that a datum is a util.counter... 
         """
         guesses = []
@@ -69,7 +66,6 @@ class PerceptronClassifier:
         """
         Returns a list of the 100 features with the greatest difference in weights:
                          w_label1 - w_label2
-
         """
         featuresOdds = []
 

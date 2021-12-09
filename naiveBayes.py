@@ -21,6 +21,7 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         self.automaticTuning = False
         self.probabilities = dict()
         self.label_proportions = {}
+        self.data = ""
 
     def setSmoothing(self, k):
         """
@@ -67,10 +68,12 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
             num_of_labels = 10
             num_of_rows = 28
             num_of_columns = 28
+            self.data = "digits"
         else:
             num_of_labels = 2
             num_of_rows = 60
             num_of_columns = 70
+            self.data = "faces"
         # need to set the probability arr to 0.001 because when calculating join probability
         # we dont want a 0 value canceling out our whole prediction.
         self.probability_arr = np.full((num_of_labels, num_of_rows,
@@ -158,7 +161,11 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
                 # value of pixel at index
                 # probability that value of index is 1 for the
                 indexProb = self.probability_arr[label, index[0], index[1]]
-                probs += probabilityOfLabel * datum[index]*indexProb
+                # if the data is faces, dont multiply by the probability of label if its digits multiply by label
+                if(self.data == "digits"):
+                    probs += probabilityOfLabel*datum[index]*indexProb
+                elif(self.data == "faces"):
+                    probs += datum[index]*indexProb
             logJoint[label] = probs
 
         # util.raiseNotDefined()
