@@ -9,6 +9,7 @@ import minicontest
 import samples
 import sys
 import util
+import numpy as np
 
 TEST_SET_SIZE = 100
 DIGIT_DATUM_WIDTH = 28
@@ -58,7 +59,7 @@ def enhancedFeatureExtractorDigit(datum):
     You should return a util.counter() of features
     for this datum (datum is of type samples.Datum).
 
-    ## DESCRIBE YOUR ENHANCED FEATURES HERE...
+    # DESCRIBE YOUR ENHANCED FEATURES HERE...
 
     ##
     """
@@ -100,7 +101,7 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
     - testLabels is the list of true labels
     - testData is the list of training datapoints (as util.Counter of features)
     - rawTestData is the list of training datapoints (as samples.Datum)
-    - printImage is a method to visualize the features 
+    - printImage is a method to visualize the features
     (see its use in the odds ratio part in runClassifier method)
 
     This code won't be evaluated. It is for your own optional use
@@ -109,7 +110,7 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
 
     # Put any code here...
     # Example of use:
-    for i in range(len(guesses)):
+    for i in range(1):
         prediction = guesses[i]
         truth = testLabels[i]
         if (prediction != truth):
@@ -118,7 +119,12 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
             print "Predicted %d; truth is %d" % (prediction, truth)
             print "Image: "
             print rawTestData[i]
-            break
+        if (prediction == truth):
+            print "==================================="
+            print "Correct Guess on Example %d" % i
+            print "Predicted %d; truth is %d" % (prediction, truth)
+            print "Image: "
+            print rawTestData[i]
 
 
 # =====================
@@ -133,12 +139,12 @@ class ImagePrinter:
 
     def printImage(self, pixels):
         """
-        Prints a Datum object that contains all pixels in the 
+        Prints a Datum object that contains all pixels in the
         provided list of pixels.  This will serve as a helper function
         to the analysis function you write.
 
-        Pixels should take the form 
-        [(2,2), (2, 3), ...] 
+        Pixels should take the form
+        [(2,2), (2, 3), ...]
         where each tuple represents a pixel.
         """
         image = samples.Datum(None, self.width, self.height)
@@ -184,7 +190,14 @@ def readCommand(argv):
         "Whether to automatically tune hyperparameters"), default=False, action="store_true")
     parser.add_option('-i', '--iterations', help=default(
         "Maximum iterations to run training"), default=3, type="int")
-
+    parser.add_option('-p', '--percentageTrain', help=default(
+        "Maximum iterations to run training"), default=100, type="int")
+    parser.add_option('-x', '--intervals', help=default(
+        "Maximum iterations to run training"), default=45, type="int")
+    parser.add_option('-r', '--random', help=default(
+        "Data Training randomness"), default=0, type="int")
+# if the random option is set to 1, the amount of training data must be the max.
+# -p is how much data going to train when doing randomness
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
@@ -220,11 +233,16 @@ def readCommand(argv):
         print "Unknown dataset", options.data
         print USAGE_STRING
         sys.exit(2)
-
+    intervals = 0
     if(options.data == "digits"):
         legalLabels = range(10)
+        # setting the amount of training data to the max we'll just be picking the training data at random
+        options.intervals = 500
+
     else:
         legalLabels = range(2)
+        # setting the amount of training data to the max we'll just be picking the training data at random
+        options.intervals = 45
 
     if options.training <= 0:
         print "Training set size should be a positive integer (you provided: %d)" % options.training
@@ -335,26 +353,55 @@ def runClassifier(args, options):
 
     # rawTrainingData[0].getPixels() outputs the raw image
     trainingData = map(featureFunction, rawTrainingData)
-    #print("NOT RAW HELLO", trainingData)
+    # print("NOT RAW HELLO", trainingData)
     validationData = map(featureFunction, rawValidationData)
     testData = map(featureFunction, rawTestData)
-
-    # Conduct training and testing
-    print "Training..."
-    classifier.train(trainingData, trainingLabels,
-                     validationData, validationLabels)
-    print "Validating..."
-    guesses = classifier.classify(validationData)
-    correct = [guesses[i] == validationLabels[i]
-               for i in range(len(validationLabels))].count(True)
-    print str(correct), ("correct out of " + str(len(validationLabels)) + " (%.1f%%).") % (100.0 * correct / len(validationLabels))
-    print "Testing..."
-    guesses = classifier.classify(testData)
-    correct = [guesses[i] == testLabels[i]
-               for i in range(len(testLabels))].count(True)
-    print str(correct), ("correct out of " + str(len(testLabels)) + " (%.1f%%).") % (100.0 * correct / len(testLabels))
-    analysis(classifier, guesses, testLabels,
-             testData, rawTestData, printImage)
+    if(options.random == 1):
+        acc = []
+        stdDeviations = []
+        mean = []
+        for j in range(options.intervals, options.training+options.intervals, options.intervals):
+            for i in range(3):
+                # Conduct training and testing
+                print "Training..."
+                classifier.train(trainingData, trainingLabels,
+                                 validationData, validationLabels, j)  # j is the amount of training images we will use
+                print j
+                print "Validating..."
+                guesses = classifier.classify(validationData)
+                correct = [guesses[i] == validationLabels[i]
+                           for i in range(len(validationLabels))].count(True)
+                print str(correct), ("correct out of " + str(len(validationLabels)) + " (%.1f%%).") % (100.0 * correct / len(validationLabels))
+                print "Testing..."
+                guesses = classifier.classify(testData)
+                correct = [guesses[i] == testLabels[i]
+                           for i in range(len(testLabels))].count(True)
+                print str(correct), ("correct out of " + str(len(testLabels)) + " (%.1f%%).") % (100.0 * correct / len(testLabels))
+                analysis(classifier, guesses, testLabels,
+                         testData, rawTestData, printImage)
+                acc.append(100.0 * correct / len(testLabels))
+            stdDeviations.append(np.std(acc))
+            mean.append(np.mean(acc))
+            acc = []
+        print stdDeviations
+        print mean
+    else:
+        # Conduct training and testing
+        print "Training..."
+        classifier.train(trainingData, trainingLabels,
+                         validationData, validationLabels, options.training, options.random)
+        print "Validating..."
+        guesses = classifier.classify(validationData)
+        correct = [guesses[i] == validationLabels[i]
+                   for i in range(len(validationLabels))].count(True)
+        print str(correct), ("correct out of " + str(len(validationLabels)) + " (%.1f%%).") % (100.0 * correct / len(validationLabels))
+        print "Testing..."
+        guesses = classifier.classify(testData)
+        correct = [guesses[i] == testLabels[i]
+                   for i in range(len(testLabels))].count(True)
+        print str(correct), ("correct out of " + str(len(testLabels)) + " (%.1f%%).") % (100.0 * correct / len(testLabels))
+        analysis(classifier, guesses, testLabels,
+                 testData, rawTestData, printImage)
 
     # do odds ratio computation if specified at command line
     if((options.odds) & (options.classifier != "mostFrequent")):

@@ -2,13 +2,13 @@ import util
 import classificationMethod
 import math
 import numpy as np
+import random
 np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
     """
     See the project description for the specifications of the Naive Bayes classifier.
-
     Note that the variable 'datum' in this code refers to a counter of features
     (not to a raw samples.Datum).
     """
@@ -22,6 +22,8 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         self.probabilities = dict()
         self.label_proportions = {}
         self.data = ""
+        self.percentageTrain = 100  # sets the training amount to 100 initially/ gets overriden
+        self.random = 0
 
     def setSmoothing(self, k):
         """
@@ -30,11 +32,12 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         """
         self.k = k
 
-    def train(self, trainingData, trainingLabels, validationData, validationLabels):
+    def train(self, trainingData, trainingLabels, validationData, validationLabels, percentageTrain, randomness):
         """
         Outside shell to call your method. Do not modify this method.
         """
-
+        self.percentageTrain = percentageTrain
+        self.random = randomness
         # this could be useful for your code later...
         self.features = trainingData[0].keys()
 
@@ -52,10 +55,8 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         stores the Laplace smoothed estimates so that they can be used to classify.
         Evaluate each value of k in kgrid to choose the smoothing parameter
         that gives the best accuracy on the held-out validationData.
-
         trainingData and validationData are lists of feature Counters.  The corresponding
         label lists contain the correct label for each datum.
-
         To get the list of all possible features or labels, use self.features and
         self.legalLabels.
         """
@@ -86,7 +87,6 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         # for every thing in the training data increment respective label when seen in training data
         for t in trainingLabels:
             self.label_proportions[t].incrementAll([t], 1)
-        print(self.label_proportions)
         # gets us the amount of that label there is
 
         # print(label_proportions.__getitem__(2).totalCount())
@@ -97,20 +97,29 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
         '''
         for i in self.legalLabels:
             label = trainingLabels[i]
+            # gets the total count of each label in the training data
             temp1 = self.label_proportions.__getitem__(label).totalCount()
             for key in trainingData[i].keys():
                 temp2 = trainingData[label].__getitem__(key)
                 if(temp2 == 1):
+                    # just sets the probability arr of where we know theres values to 0 because we dont want probability
                     self.probability_arr[label, key[0], key[1]] = 0
+                    # of index to be greater than 1, if we didnt do this it would just sum to 1.001, not much of a difference
         '''
         This for loop iterates through the training data and sets the
         probability array for each label
         '''
-        for i in range(len(trainingData)):
-            label = trainingLabels[i]
+        for i in range(self.percentageTrain):
+            # if were training randomly we must generate a random index here
+            # get the label of rand index and so on
+            index = i
+            if(self.random == 1):
+                index = random.randint(
+                    0, len(trainingData)-1)  # this is only for if we want to train data in random order
+            label = trainingLabels[index]
             temp1 = self.label_proportions.__getitem__(label).totalCount()
-            for key in trainingData[i].keys():
-                temp2 = trainingData[i].__getitem__(key)
+            for key in trainingData[index].keys():
+                temp2 = trainingData[index].__getitem__(key)
                 if(temp2 == 1):
                     self.probability_arr[label, key[0], key[1]] += (1.0/temp1)
 
@@ -125,7 +134,6 @@ class NaiveBayesClassifier(classificationMethod.ClassificationMethod):
     def classify(self, testData):
         """
         Classify the data based on the posterior distribution over labels.
-
         You shouldn't modify this method.
         """
         guesses = []

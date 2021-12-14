@@ -1,5 +1,6 @@
 # Perceptron implementation
 import util
+import random
 PRINT = True
 
 
@@ -19,8 +20,9 @@ class PerceptronClassifier:
             # this is the data-structure you should use
             self.weights[label] = util.Counter()
             # each number has a counter for the weights
+        self.random = 0
 
-    def train(self, trainingData, trainingLabels, validationData, validationLabels):
+    def train(self, trainingData, trainingLabels, validationData, validationLabels, amount_of_data, randomness):
         """
         The training loop for the perceptron passes through the training data several
         times and updates the weight vector for each label based on classification errors.
@@ -35,16 +37,23 @@ class PerceptronClassifier:
         # basicFeatureExtractor method in dataClassifier.py breaks the image down
         # into 1s and 0s, self.features is the pixels that have values,
         # self.weights stores the pixels along with their weights
-
+        self.random = randomness
         for iteration in range(self.max_iterations):
             print "Starting iteration ", iteration, "..."
-            for i in range(len(trainingData)):
+            for i in range(amount_of_data):
                 "*** YOUR CODE HERE ***"
                 # training data stores the keys and values of the image
-                guess = self.classify([trainingData[i]])[0]
-                if guess != trainingLabels[i]:  # training
-                    self.weights[guess] -= trainingData[i]
-                    self.weights[trainingLabels[i]] += trainingData[i]
+                index = i
+                if(self.random == 1):
+                    index = random.randint(
+                        0, len(trainingData)-1)  # pick a random image from the training data
+                # classify method returns our guess for the random training data
+                guess = self.classify([trainingData[index]])[0]
+                # if the guess is incorrect adjust the weights
+                if guess != trainingLabels[index]:
+                    self.weights[guess] -= trainingData[index]
+                    self.weights[trainingLabels[index]
+                                 ] += trainingData[index]
 
     def classify(self, data):
         """
